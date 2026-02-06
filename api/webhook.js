@@ -2,10 +2,6 @@ export const runtime = "nodejs";
 
 import { runAI } from "../ai/engine.js";
 
-export const config = {
-  api: { bodyParser: true },
-};
-
 const greeting = `
 Halo 👋  
 Saya AI Mitra Nagari Digital.
@@ -34,7 +30,7 @@ export default async function handler(req, res) {
       return res.status(200).send(req.query["hub.challenge"]);
     }
 
-    return res.sendStatus(403);
+    return res.status(403).end();
   }
 
   // ===== RECEIVE MESSAGE =====
@@ -48,7 +44,7 @@ export default async function handler(req, res) {
       const from =
         body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
 
-      if (!msg || !from) return res.sendStatus(200);
+      if (!msg || !from) return res.status(200).end();
 
       let reply;
 
@@ -76,11 +72,11 @@ export default async function handler(req, res) {
         }
       );
 
-      return res.sendStatus(200);
+      return res.status(200).end();
 
     } catch (err) {
       console.log("WEBHOOK ERROR:", err);
-      return res.sendStatus(200);
+      return res.status(200).end();
     }
   }
 }
