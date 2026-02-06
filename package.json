@@ -1,0 +1,27 @@
+{
+  "name": "mitranagari-superapp",
+  "version": "1.0.0",
+  "description": "Superapp AI PT Mitra Nagari Digital",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lengayang/mitranagari-superapp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/lengayang/mitranagari-superapp/issues"
+  },
+  "homepage": "https://github.com/lengayang/mitranagari-superapp#readme",
+  "dependencies": {
+    "openai": "^6.18.0"
+  }
+}
