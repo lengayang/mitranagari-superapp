@@ -1,5 +1,5 @@
-// Core AI Engine - Mitra Nagari Digital
+// AI Engine Mitra Nagari
 
-export function aiHello() {
-  return "AI Mitra Nagari aktif.";
+export async function runAI(message) {
+  return `AI Mitra Nagari menerima: ${message}`;
 }
