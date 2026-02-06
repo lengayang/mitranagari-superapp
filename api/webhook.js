@@ -2,7 +2,7 @@ import { runAI } from "../ai/engine.js";
 
 export default async function handler(req, res) {
 
-  // ===== VERIFIKASI META =====
+  // ===== VERIFY META =====
   if (req.method === "GET") {
     const VERIFY_TOKEN = "mitra_token_2026";
 
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     return res.sendStatus(403);
   }
 
-  // ===== TERIMA PESAN WA =====
+  // ===== TERIMA PESAN =====
   if (req.method === "POST") {
     try {
       const body = req.body;
@@ -30,8 +30,10 @@ export default async function handler(req, res) {
 
       if (!msg || !from) return res.sendStatus(200);
 
+      // jalankan AI
       const reply = await runAI(msg);
 
+      // kirim balasan ke WhatsApp
       await fetch(
         `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
         {
@@ -52,7 +54,7 @@ export default async function handler(req, res) {
       res.sendStatus(200);
     } catch (e) {
       console.error(e);
-      res.sendStatus(500);
+      res.sendStatus(200);
     }
   }
 }
