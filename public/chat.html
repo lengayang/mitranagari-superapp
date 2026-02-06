@@ -40,9 +40,10 @@ body{
 
 .msg{
   margin:10px 0;
-  padding:10px;
-  border-radius:10px;
+  padding:12px;
+  border-radius:12px;
   max-width:80%;
+  white-space:pre-wrap;
 }
 
 .user{
@@ -70,6 +71,7 @@ button{
   background:#22c55e;
   border:none;
   color:white;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -81,7 +83,7 @@ button{
   <div id="messages" class="messages"></div>
 
   <div class="input">
-    <input id="text" placeholder="Tulis pesan..." />
+    <input id="text" placeholder="Tulis pesan..." onkeydown="if(event.key==='Enter') send()" />
     <button onclick="send()">Kirim</button>
   </div>
 </div>
@@ -89,27 +91,34 @@ button{
 <script>
 async function send(){
   const input = document.getElementById("text");
-  const msg = input.value;
-  if(!msg) return;
+  const message = input.value.trim();
+  if(!message) return;
 
-  add(msg,"user");
+  add(message,"user");
   input.value="";
 
-  const res = await fetch("/api/ai",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json"},
-    body: JSON.stringify({msg})
-  });
+  try{
+    const res = await fetch("/api/ai",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json"},
+      body: JSON.stringify({ message })   // 🔥 WAJIB pakai "message"
+    });
 
-  const data = await res.json();
-  add(data.reply,"ai");
+    const data = await res.json();
+    add(data.reply || "AI tidak merespons","ai");
+  }catch(e){
+    add("Server error","ai");
+  }
 }
 
 function add(text,cls){
   const div=document.createElement("div");
   div.className="msg "+cls;
   div.innerText=text;
-  document.getElementById("messages").appendChild(div);
+
+  const box = document.getElementById("messages");
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
 }
 </script>
 
