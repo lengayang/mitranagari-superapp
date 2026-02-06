@@ -2,6 +2,7 @@
   "name": "mitranagari-superapp",
   "version": "1.0.0",
   "description": "Superapp AI PT Mitra Nagari Digital",
+  "type": "module",
   "main": "index.js",
   "directories": {
     "doc": "docs"
