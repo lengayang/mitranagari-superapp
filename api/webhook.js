@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { runAI } from "../ai/engine.js";
 
 export const config = {
