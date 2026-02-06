@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Mitra Nagari</title>
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  background:#0f172a;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.chat{
+  width:400px;
+  height:600px;
+  background:#111827;
+  border-radius:20px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.header{
+  padding:15px;
+  background:#1f2937;
+  font-weight:bold;
+}
+
+.messages{
+  flex:1;
+  padding:15px;
+  overflow:auto;
+}
+
+.msg{
+  margin:10px 0;
+  padding:10px;
+  border-radius:10px;
+  max-width:80%;
+}
+
+.user{
+  background:#2563eb;
+  margin-left:auto;
+}
+
+.ai{
+  background:#374151;
+}
+
+.input{
+  display:flex;
+}
+
+input{
+  flex:1;
+  padding:15px;
+  border:none;
+  outline:none;
+}
+
+button{
+  padding:15px;
+  background:#22c55e;
+  border:none;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="chat">
+  <div class="header">AI Mitra Nagari</div>
+  <div id="messages" class="messages"></div>
+
+  <div class="input">
+    <input id="text" placeholder="Tulis pesan..." />
+    <button onclick="send()">Kirim</button>
+  </div>
+</div>
+
+<script>
+async function send(){
+  const input = document.getElementById("text");
+  const msg = input.value;
+  if(!msg) return;
+
+  add(msg,"user");
+  input.value="";
+
+  const res = await fetch("/api/ai",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json"},
+    body: JSON.stringify({msg})
+  });
+
+  const data = await res.json();
+  add(data.reply,"ai");
+}
+
+function add(text,cls){
+  const div=document.createElement("div");
+  div.className="msg "+cls;
+  div.innerText=text;
+  document.getElementById("messages").appendChild(div);
+}
+</script>
+
+</body>
+</html>
