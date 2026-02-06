@@ -1,4 +1,3 @@
-import fetch from "node-fetch";
 import { runAI } from "../ai/engine.js";
 
 export const config = {
