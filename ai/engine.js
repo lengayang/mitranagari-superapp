@@ -8,7 +8,7 @@ const client = new OpenAI({
 
 export async function runAI(message) {
   const completion = await client.chat.completions.create({
-    model: "gpt-5.2",
+    model: "gpt-4o-mini",
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: message }
