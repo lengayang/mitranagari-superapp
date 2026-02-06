@@ -1,5 +1,27 @@
 import { runAI } from "../ai/engine.js";
 
+const firstGreeting = `
+Halo 👋  
+Saya AI resmi PT Mitra Nagari Digital.
+
+Kami membantu:
+• Sekolah (website, PPDB, e-learning, sistem digital)
+• UMKM (branding, katalog, promosi digital)
+• Nagari (profil nagari, layanan publik, data warga)
+• Konsultasi teknologi & AI
+
+Kak/Bapak/Ibu dari kategori mana?
+1️⃣ Sekolah  
+2️⃣ UMKM  
+3️⃣ Nagari  
+4️⃣ Konsultasi umum  
+
+Tulis nomor pilihan atau kebutuhan utama.
+`;
+
+// memory sederhana (sementara)
+const userSession = {};
+
 export default async function handler(req, res) {
 
   // ===== VERIFY META =====
@@ -30,10 +52,18 @@ export default async function handler(req, res) {
 
       if (!msg || !from) return res.sendStatus(200);
 
-      // jalankan AI
-      const reply = await runAI(msg);
+      let reply;
 
-      // kirim balasan ke WhatsApp
+      // ===== PESAN PERTAMA USER =====
+      if (!userSession[from]) {
+        userSession[from] = true;
+        reply = firstGreeting;
+      } else {
+        // ===== PESAN BERIKUTNYA → AI =====
+        reply = await runAI(msg);
+      }
+
+      // ===== KIRIM BALASAN WA =====
       await fetch(
         `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
         {
