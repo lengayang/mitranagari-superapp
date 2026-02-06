@@ -1,9 +1,6 @@
-export const runtime = "nodejs";
-
 import { runAI } from "../ai/engine.js";
 
-const greeting = `
-Halo 👋  
+const greeting = `Halo 👋  
 Saya AI Mitra Nagari Digital.
 
 Saya membantu:
@@ -12,8 +9,7 @@ Saya membantu:
 • Nagari
 • Sistem digital
 
-Ketik kebutuhan Bapak/Ibu.
-`;
+Ketik kebutuhan Bapak/Ibu.`;
 
 const sessions = {};
 
@@ -30,7 +26,7 @@ export default async function handler(req, res) {
       return res.status(200).send(req.query["hub.challenge"]);
     }
 
-    return res.status(403).end();
+    return res.status(403).send("Forbidden");
   }
 
   // ===== RECEIVE MESSAGE =====
@@ -44,7 +40,9 @@ export default async function handler(req, res) {
       const from =
         body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
 
-      if (!msg || !from) return res.status(200).end();
+      if (!msg || !from) {
+        return res.status(200).send("no message");
+      }
 
       let reply;
 
@@ -72,11 +70,11 @@ export default async function handler(req, res) {
         }
       );
 
-      return res.status(200).end();
+      return res.status(200).send("ok");
 
     } catch (err) {
       console.log("WEBHOOK ERROR:", err);
-      return res.status(200).end();
+      return res.status(200).send("error handled");
     }
   }
 }
