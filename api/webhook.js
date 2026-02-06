@@ -1,4 +1,9 @@
+import fetch from "node-fetch";
 import { runAI } from "../ai/engine.js";
+
+export const config = {
+  api: { bodyParser: true },
+};
 
 const greeting = `
 Halo 👋  
@@ -17,7 +22,7 @@ const sessions = {};
 
 export default async function handler(req, res) {
 
-  // ===== VERIFY =====
+  // ===== VERIFY META =====
   if (req.method === "GET") {
     const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 
@@ -31,10 +36,9 @@ export default async function handler(req, res) {
     return res.sendStatus(403);
   }
 
-  // ===== RECEIVE =====
+  // ===== RECEIVE MESSAGE =====
   if (req.method === "POST") {
     try {
-
       const body = req.body;
 
       const msg =
@@ -51,11 +55,7 @@ export default async function handler(req, res) {
         sessions[from] = true;
         reply = greeting;
       } else {
-        try {
-          reply = await runAI(msg);
-        } catch {
-          reply = "AI aktif. Ketik kebutuhan Bapak/Ibu.";
-        }
+        reply = await runAI(msg);
       }
 
       await fetch(
