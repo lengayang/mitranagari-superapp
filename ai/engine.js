@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import OpenAI from "openai";
 import { SYSTEM_PROMPT } from "./prompt.js";
 
@@ -15,5 +14,5 @@ export async function runAI(message) {
     ]
   });
 
-  return completion.choices[0].message.content;
+  return completion.choices[0].message.content || "Baik, saya bantu.";
 }
