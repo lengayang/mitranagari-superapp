@@ -14,5 +14,5 @@ export async function runAI(message) {
     ]
   });
 
-  return completion.choices[0].message.content || "Baik, saya bantu.";
+  return completion.choices[0].message.content || "Baik.";
 }
