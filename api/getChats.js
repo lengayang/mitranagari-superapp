@@ -2,16 +2,27 @@ export default async function handler(req, res) {
   try {
     const url = process.env.GAS_GET
 
-    if (!url) {
+    const r = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+
+    const text = await r.text()
+
+    // debug jika bukan JSON
+    if (text.startsWith("<")) {
       return res.status(500).json({
-        error: "GAS_GET belum di set di Vercel ENV"
+        error: "GAS mengembalikan HTML, bukan JSON",
+        preview: text.slice(0, 200)
       })
     }
 
-    const r = await fetch(url)
-    const data = await r.json()
+    const data = JSON.parse(text)
 
     res.status(200).json(data)
+
   } catch (err) {
     res.status(500).json({
       error: err.toString()
