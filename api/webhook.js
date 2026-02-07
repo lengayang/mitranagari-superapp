@@ -7,7 +7,6 @@ async function getMode(user){
   try{
     const r = await fetch(process.env.GAS_GET);
     const data = await r.json();
-
     const rows = data.slice(1).reverse();
 
     for(const row of rows){
@@ -15,11 +14,9 @@ async function getMode(user){
         return row[6];
       }
     }
-
     return "AI";
-
   }catch(e){
-    console.log("getMode error",e);
+    console.log("getMode error", e);
     return "AI";
   }
 }
@@ -41,7 +38,7 @@ async function setMode(user,mode,name){
       })
     });
   }catch(e){
-    console.log("setMode error",e);
+    console.log("setMode error", e);
   }
 }
 
@@ -50,14 +47,42 @@ async function setMode(user,mode,name){
    =============================== */
 function detect(text){
   const t = text.toLowerCase().trim();
-
   if(t === "ai") return "RESET";
   if(t.startsWith("sekolah")) return "SEKOLAH";
   if(t.startsWith("sarpras")) return "SARPRAS";
   if(t.startsWith("umkm")) return "UMKM";
   if(t.startsWith("operator")) return "OPERATOR";
-
   return null;
+}
+
+/* ===============================
+   KIRIM KE WHATSAPP (FIXED)
+   =============================== */
+async function sendWA(to, reply){
+  try{
+    const send = await fetch(
+      `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
+      {
+        method:"POST",
+        headers:{
+          Authorization:`Bearer ${process.env.WA_TOKEN}`,
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+          messaging_product:"whatsapp",
+          to: to,
+          type: "text",            // ← WAJIB ADA
+          text: { body: reply }
+        })
+      }
+    );
+
+    const resultText = await send.text();
+    console.log("META RESPONSE:", resultText);
+
+  }catch(e){
+    console.log("sendWA error", e);
+  }
 }
 
 /* ===============================
@@ -86,16 +111,15 @@ export default async function handler(req,res){
 
       const from = msg.from;
       const text = msg.text?.body || "";
-
       if(!text) return res.sendStatus(200);
 
       const name =
         body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name || "";
 
-      /* ===== AMBIL MODE TERAKHIR ===== */
+      /* ===== AMBIL MODE ===== */
       let mode = await getMode(from);
 
-      /* ===== CEK PERINTAH MODE ===== */
+      /* ===== DETEKSI MODE ===== */
       const route = detect(text);
 
       if(route === "RESET"){
@@ -107,7 +131,7 @@ export default async function handler(req,res){
         await setMode(from,route,name);
       }
 
-      /* ===== TENTUKAN BALASAN ===== */
+      /* ===== BALASAN ===== */
       let reply;
 
       if(mode === "SEKOLAH"){
@@ -130,24 +154,10 @@ export default async function handler(req,res){
         reply = await runAI(text);
       }
 
-      /* ===== KIRIM KE WHATSAPP ===== */
-      await fetch(
-        `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
-        {
-          method:"POST",
-          headers:{
-            Authorization:`Bearer ${process.env.WA_TOKEN}`,
-            "Content-Type":"application/json"
-          },
-          body:JSON.stringify({
-            messaging_product:"whatsapp",
-            to:from,
-            text:{ body:reply }
-          })
-        }
-      );
+      /* ===== KIRIM WA ===== */
+      await sendWA(from, reply);
 
-      /* ===== LOG CHAT ===== */
+      /* ===== LOG KE SHEET ===== */
       await fetch(process.env.GAS_WEBHOOK,{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
@@ -163,7 +173,7 @@ export default async function handler(req,res){
       return res.sendStatus(200);
 
     }catch(err){
-      console.log("WEBHOOK ERROR:",err);
+      console.log("WEBHOOK ERROR:", err);
       return res.sendStatus(200);
     }
   }
