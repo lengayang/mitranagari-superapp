@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import { SYSTEM_PROMPT } from "./prompt.js";
 
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function runAI(message) {
@@ -11,8 +11,8 @@ export async function runAI(message) {
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: message }
-    ]
+    ],
   });
 
-  return completion.choices[0].message.content || "Baik.";
+  return completion.choices[0].message.content;
 }

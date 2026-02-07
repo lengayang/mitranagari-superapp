@@ -1,6 +1,7 @@
 import { runAI } from "../ai/engine.js";
 
 export default async function handler(req, res) {
+
   if (req.method !== "POST") {
     return res.status(200).json({ msg: "AI Mitra Nagari online" });
   }
@@ -18,6 +19,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error("AI ERROR:", err);
-    return res.status(200).json({ reply: "AI sedang aktif, coba lagi." });
+    return res.status(200).json({ reply: "AI error" });
   }
 }
