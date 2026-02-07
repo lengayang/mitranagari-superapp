@@ -1,12 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Dashboard Mitra</title>
+<title>Mitra Inbox</title>
+<style>
+body{
+  background:#0f172a;
+  color:white;
+  font-family:Arial;
+}
+.chat{
+  border-bottom:1px solid #333;
+  padding:10px;
+}
+.phone{
+  color:#38bdf8;
+}
+</style>
 </head>
 
-<body style="background:#0f172a;color:white;font-family:Arial">
+<body>
 
-<h2>Inbox Mitra</h2>
+<h2>Inbox Mitra Nagari</h2>
 <div id="chat"></div>
 
 <script>
@@ -17,11 +31,13 @@ async function load(){
   const el = document.getElementById("chat")
   el.innerHTML=""
 
+  // skip header row
   data.slice(1).reverse().forEach(row=>{
     el.innerHTML += `
-      <div style="border-bottom:1px solid #333;padding:10px">
-        <b>${row[1]}</b><br>
-        ${row[3]}
+      <div class="chat">
+        <div class="phone">${row[1]}</div>
+        <div>${row[3]}</div>
+        <div style="color:#22c55e">${row[4]||""}</div>
       </div>
     `
   })
