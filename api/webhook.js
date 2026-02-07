@@ -1,8 +1,6 @@
 import { runAI } from "../ai/engine.js";
 
-/* =========================
-   SESSION MEMORY
-   ========================= */
+/* ================= SESSION ================= */
 const sessions = {};
 
 function getSession(user){
@@ -15,70 +13,58 @@ function getSession(user){
   return sessions[user];
 }
 
-/* =========================
-   ROUTER
-   ========================= */
+/* ================= ROUTER ================= */
 function detectRoute(text){
   const t = text.toLowerCase().trim();
 
   if(t==="ai") return "RESET";
 
-  if(t.includes("sarpras")) return "SARPRAS";
-  if(t.includes("sekolah")) return "SEKOLAH";
-  if(t.includes("umkm")) return "UMKM";
-  if(t.includes("operator")) return "OPERATOR";
+  if(t.startsWith("sarpras")) return "SARPRAS";
+  if(t.startsWith("sekolah")) return "SEKOLAH";
+  if(t.startsWith("umkm")) return "UMKM";
+  if(t.startsWith("operator")) return "OPERATOR";
 
   return null;
 }
 
-/* =========================
-   SERVICE ENGINE
-   ========================= */
+/* ================= ENGINE ================= */
 async function runEngine(mode,ctx){
+
+  if(mode==="SEKOLAH"){
+    return "📚 Mode Sekolah aktif.\nKetik: jadwal, info, guru.";
+  }
 
   if(mode==="SARPRAS"){
     if(ctx.message.toLowerCase().includes("lapor")){
-      return "Silakan kirim format:\nLAPOR\nLokasi:\nKerusakan:";
+      return "🛠 Kirim format:\nLAPOR\nLokasi:\nKerusakan:";
     }
-    return "Mode Sarpras aktif. Ketik *LAPOR* untuk melapor fasilitas.";
-  }
-
-  if(mode==="SEKOLAH"){
-    return "Mode Sekolah aktif. Ketik *INFO* untuk layanan sekolah.";
+    return "🛠 Mode Sarpras aktif. Ketik LAPOR.";
   }
 
   if(mode==="UMKM"){
-    return "Mode UMKM aktif. Ketik *PRODUK* untuk katalog.";
+    return "🛒 Mode UMKM aktif. Ketik PRODUK.";
   }
 
   if(mode==="OPERATOR"){
-    return "Baik, operator akan segera membantu.";
+    return "Operator akan segera membantu.";
   }
 
-  /* default AI */
   return await runAI(ctx.message);
 }
 
-/* =========================
-   GREETING
-   ========================= */
+/* ================= GREETING ================= */
 const greeting = `Halo 👋
 Saya AI Mitra Nagari Digital.
 
-Saya membantu:
-• Sekolah
-• UMKM
-• Nagari
-• Sistem digital
+Ketik:
+• sekolah
+• sarpras
+• umkm
+• operator`;
 
-Ketik kebutuhan Bapak.`;
-
-/* =========================
-   HANDLER
-   ========================= */
+/* ================= HANDLER ================= */
 export default async function handler(req,res){
 
-  /* ===== VERIFY META ===== */
   if(req.method==="GET"){
     if(
       req.query["hub.mode"]==="subscribe" &&
@@ -89,7 +75,6 @@ export default async function handler(req,res){
     return res.sendStatus(403);
   }
 
-  /* ===== RECEIVE WA ===== */
   if(req.method==="POST"){
     try{
 
@@ -106,7 +91,7 @@ export default async function handler(req,res){
 
       const session = getSession(from);
 
-      /* ===== LOG PESAN MASUK ===== */
+      /* ===== LOG MASUK ===== */
       await fetch(process.env.GAS_WEBHOOK,{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
@@ -122,21 +107,25 @@ export default async function handler(req,res){
 
       /* ===== GREETING ===== */
       if(!session.greeted){
-        session.greeted = true;
-        reply = greeting;
+        session.greeted=true;
+        reply=greeting;
       }else{
 
-        /* DETEKSI MODE BARU */
         const route = detectRoute(text);
 
+        /* RESET MODE */
         if(route==="RESET"){
           session.mode="AI";
-          reply = "Mode kembali ke AI.";
+          reply="Mode kembali ke AI.";
         }
+
+        /* GANTI MODE */
         else if(route){
-          session.mode = route;
-          reply = `Mode ${route} aktif.`;
+          session.mode=route;
+          reply=`Mode ${route} aktif.`;
         }
+
+        /* JALANKAN MODE SEKARANG */
         else{
           reply = await runEngine(session.mode,{
             user:from,
@@ -162,7 +151,7 @@ export default async function handler(req,res){
         }
       );
 
-      /* ===== LOG BALASAN ===== */
+      /* ===== LOG BALAS ===== */
       await fetch(process.env.GAS_WEBHOOK,{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
