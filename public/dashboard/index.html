@@ -6,8 +6,30 @@
 
 <body style="background:#0f172a;color:white;font-family:Arial">
 
-<h1>Dashboard Mitra Nagari</h1>
-<p>Sistem sedang dibangun...</p>
+<h2>Inbox Mitra</h2>
+<div id="chat"></div>
+
+<script>
+async function load(){
+  const r = await fetch("/api/getChats")
+  const data = await r.json()
+
+  const el = document.getElementById("chat")
+  el.innerHTML=""
+
+  data.slice(1).reverse().forEach(row=>{
+    el.innerHTML += `
+      <div style="border-bottom:1px solid #333;padding:10px">
+        <b>${row[1]}</b><br>
+        ${row[3]}
+      </div>
+    `
+  })
+}
+
+setInterval(load,3000)
+load()
+</script>
 
 </body>
 </html>
