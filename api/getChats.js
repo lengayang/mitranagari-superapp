@@ -4,7 +4,7 @@ export default async function handler(req, res) {
     const cookie = req.headers.cookie || "";
 
     if (!cookie.includes(process.env.ADMIN_TOKEN)) {
-      return res.status(401).json({ error: "unauthorized" });
+      return res.status(401).json({ error:"unauthorized" });
     }
 
     const r = await fetch(process.env.GAS_GET);
@@ -13,7 +13,6 @@ export default async function handler(req, res) {
     res.status(200).json(data);
 
   } catch (err) {
-    console.log("GETCHATS ERROR:", err);
-    res.status(500).json({ error: "server error" });
+    res.status(500).json({ error:"server error" });
   }
 }
