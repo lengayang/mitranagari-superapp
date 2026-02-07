@@ -1,16 +1,24 @@
 import { runAI } from "../ai/engine.js";
 
-// ====== STATE SEDERHANA ======
+/* =========================
+   SESSION MEMORY (ringan)
+   ========================= */
 const sessions = {};
 
-function getMode(user){
+/* ambil state user */
+function getSession(user){
   if(!sessions[user]){
-    sessions[user] = { mode:"AI", greeted:false };
+    sessions[user] = {
+      greeted:false,
+      mode:"AI"
+    };
   }
   return sessions[user];
 }
 
-// ====== ROUTER ======
+/* =========================
+   ROUTER
+   ========================= */
 function detectRoute(text){
   const t = text.toLowerCase();
 
@@ -22,29 +30,33 @@ function detectRoute(text){
   return "AI";
 }
 
-// ====== SERVICE ENGINE ======
+/* =========================
+   SERVICE ENGINE
+   ========================= */
 async function runEngine(route,ctx){
 
   if(route==="SARPRAS"){
-    return "Layanan Sarpras aktif. Ketik LAPOR untuk melapor fasilitas.";
+    return "Layanan Sarpras aktif. Ketik *LAPOR* untuk melapor fasilitas.";
   }
 
   if(route==="SEKOLAH"){
-    return "Layanan Sekolah aktif. Ketik INFO untuk informasi akademik.";
+    return "Layanan Sekolah aktif. Ketik *INFO* untuk informasi akademik.";
   }
 
   if(route==="UMKM"){
-    return "Layanan UMKM aktif. Ketik PRODUK untuk katalog.";
+    return "Layanan UMKM aktif. Ketik *PRODUK* untuk katalog.";
   }
 
   if(route==="OPERATOR"){
-    return "Operator akan segera membantu.";
+    return "Operator akan segera membantu Bapak.";
   }
 
   return await runAI(ctx.message);
 }
 
-// ====== GREETING ======
+/* =========================
+   GREETING
+   ========================= */
 const greeting = `Halo 👋
 Saya AI Mitra Nagari Digital.
 
@@ -56,38 +68,40 @@ Saya membantu:
 
 Ketik kebutuhan Bapak.`;
 
-// ====== HANDLER ======
-export default async function handler(req, res) {
+/* =========================
+   MAIN HANDLER
+   ========================= */
+export default async function handler(req,res){
 
-  // ===== VERIFY META =====
-  if (req.method === "GET") {
-    if (
-      req.query["hub.mode"] === "subscribe" &&
-      req.query["hub.verify_token"] === process.env.VERIFY_TOKEN
-    ) {
+  /* ===== VERIFY META ===== */
+  if(req.method==="GET"){
+    if(
+      req.query["hub.mode"]==="subscribe" &&
+      req.query["hub.verify_token"]===process.env.VERIFY_TOKEN
+    ){
       return res.status(200).send(req.query["hub.challenge"]);
     }
     return res.sendStatus(403);
   }
 
-  // ===== RECEIVE MESSAGE =====
-  if (req.method === "POST") {
-    try {
+  /* ===== RECEIVE WA ===== */
+  if(req.method==="POST"){
+    try{
 
       const body = req.body;
       const msg = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-      if (!msg) return res.sendStatus(200);
+      if(!msg) return res.sendStatus(200);
 
       const from = msg.from;
       const text = msg.text?.body || "";
-      if (!text) return res.sendStatus(200);
+      if(!text) return res.sendStatus(200);
 
       const name =
         body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name || "";
 
-      const session = getMode(from);
+      const session = getSession(from);
 
-      // ===== SIMPAN PESAN MASUK =====
+      /* ===== LOG KE SHEET ===== */
       await fetch(process.env.GAS_WEBHOOK,{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
@@ -101,37 +115,36 @@ export default async function handler(req, res) {
 
       let reply;
 
-      // ===== GREETING PERTAMA =====
+      /* ===== GREETING PERTAMA ===== */
       if(!session.greeted){
         session.greeted = true;
         reply = greeting;
       }else{
         const route = detectRoute(text);
-
         reply = await runEngine(route,{
           user:from,
           message:text
         });
       }
 
-      // ===== KIRIM KE WHATSAPP =====
+      /* ===== KIRIM KE WA ===== */
       await fetch(
         `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
         {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.WA_TOKEN}`,
-            "Content-Type": "application/json",
+          method:"POST",
+          headers:{
+            Authorization:`Bearer ${process.env.WA_TOKEN}`,
+            "Content-Type":"application/json"
           },
-          body: JSON.stringify({
-            messaging_product: "whatsapp",
-            to: from,
-            text: { body: reply },
-          }),
+          body:JSON.stringify({
+            messaging_product:"whatsapp",
+            to:from,
+            text:{ body:reply }
+          })
         }
       );
 
-      // ===== SIMPAN BALASAN =====
+      /* ===== LOG BALASAN ===== */
       await fetch(process.env.GAS_WEBHOOK,{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
@@ -139,14 +152,14 @@ export default async function handler(req, res) {
           phone: from,
           name,
           message: text,
-          reply: reply
+          reply
         })
       });
 
       return res.sendStatus(200);
 
-    } catch (err) {
-      console.log("WEBHOOK ERROR:", err);
+    }catch(err){
+      console.log("WEBHOOK ERROR:",err);
       return res.sendStatus(200);
     }
   }
