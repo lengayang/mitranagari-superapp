@@ -16,7 +16,7 @@ async function getMode(user){
     }
     return "AI";
   }catch(e){
-    console.log("getMode error", e);
+    console.log("getMode error:", e);
     return "AI";
   }
 }
@@ -38,29 +38,32 @@ async function setMode(user,mode,name){
       })
     });
   }catch(e){
-    console.log("setMode error", e);
+    console.log("setMode error:", e);
   }
 }
 
 /* ===============================
-   DETEKSI PERINTAH MODE
+   DETEKSI MODE
    =============================== */
 function detect(text){
   const t = text.toLowerCase().trim();
+
   if(t === "ai") return "RESET";
   if(t.startsWith("sekolah")) return "SEKOLAH";
   if(t.startsWith("sarpras")) return "SARPRAS";
   if(t.startsWith("umkm")) return "UMKM";
   if(t.startsWith("operator")) return "OPERATOR";
+
   return null;
 }
 
 /* ===============================
-   KIRIM KE WHATSAPP (FIXED)
+   KIRIM WHATSAPP
    =============================== */
 async function sendWA(to, reply){
   try{
-    const send = await fetch(
+
+    const res = await fetch(
       `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
       {
         method:"POST",
@@ -71,17 +74,17 @@ async function sendWA(to, reply){
         body: JSON.stringify({
           messaging_product:"whatsapp",
           to: to,
-          type: "text",            // ← WAJIB ADA
-          text: { body: reply }
+          type:"text",
+          text:{ body: reply }
         })
       }
     );
 
-    const resultText = await send.text();
-    console.log("META RESPONSE:", resultText);
+    const text = await res.text();
+    console.log("META RESPONSE:", text);
 
   }catch(e){
-    console.log("sendWA error", e);
+    console.log("sendWA error:", e);
   }
 }
 
@@ -98,7 +101,7 @@ export default async function handler(req,res){
     ){
       return res.status(200).send(req.query["hub.challenge"]);
     }
-    return res.sendStatus(403);
+    return res.status(403).end();
   }
 
   /* ===== RECEIVE MESSAGE ===== */
@@ -107,19 +110,24 @@ export default async function handler(req,res){
 
       const body = req.body;
       const msg = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-      if(!msg) return res.sendStatus(200);
+
+      if(!msg){
+        return res.status(200).end();
+      }
 
       const from = msg.from;
       const text = msg.text?.body || "";
-      if(!text) return res.sendStatus(200);
+
+      if(!text){
+        return res.status(200).end();
+      }
 
       const name =
         body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name || "";
 
-      /* ===== AMBIL MODE ===== */
+      /* ===== MODE USER ===== */
       let mode = await getMode(from);
 
-      /* ===== DETEKSI MODE ===== */
       const route = detect(text);
 
       if(route === "RESET"){
@@ -170,11 +178,11 @@ export default async function handler(req,res){
         })
       });
 
-      return res.sendStatus(200);
+      return res.status(200).end();
 
     }catch(err){
       console.log("WEBHOOK ERROR:", err);
-      return res.sendStatus(200);
+      return res.status(200).end();
     }
   }
 }
