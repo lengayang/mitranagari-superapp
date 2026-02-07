@@ -1,11 +1,10 @@
 import { runAI } from "../ai/engine.js";
 
 /* =========================
-   SESSION MEMORY (ringan)
+   SESSION MEMORY
    ========================= */
 const sessions = {};
 
-/* ambil state user */
 function getSession(user){
   if(!sessions[user]){
     sessions[user] = {
@@ -20,37 +19,43 @@ function getSession(user){
    ROUTER
    ========================= */
 function detectRoute(text){
-  const t = text.toLowerCase();
+  const t = text.toLowerCase().trim();
+
+  if(t==="ai") return "RESET";
 
   if(t.includes("sarpras")) return "SARPRAS";
   if(t.includes("sekolah")) return "SEKOLAH";
   if(t.includes("umkm")) return "UMKM";
   if(t.includes("operator")) return "OPERATOR";
 
-  return "AI";
+  return null;
 }
 
 /* =========================
    SERVICE ENGINE
    ========================= */
-async function runEngine(route,ctx){
+async function runEngine(mode,ctx){
 
-  if(route==="SARPRAS"){
-    return "Layanan Sarpras aktif. Ketik *LAPOR* untuk melapor fasilitas.";
+  if(mode==="SARPRAS"){
+    if(ctx.message.toLowerCase().includes("lapor")){
+      return "Silakan kirim format:\nLAPOR\nLokasi:\nKerusakan:";
+    }
+    return "Mode Sarpras aktif. Ketik *LAPOR* untuk melapor fasilitas.";
   }
 
-  if(route==="SEKOLAH"){
-    return "Layanan Sekolah aktif. Ketik *INFO* untuk informasi akademik.";
+  if(mode==="SEKOLAH"){
+    return "Mode Sekolah aktif. Ketik *INFO* untuk layanan sekolah.";
   }
 
-  if(route==="UMKM"){
-    return "Layanan UMKM aktif. Ketik *PRODUK* untuk katalog.";
+  if(mode==="UMKM"){
+    return "Mode UMKM aktif. Ketik *PRODUK* untuk katalog.";
   }
 
-  if(route==="OPERATOR"){
-    return "Operator akan segera membantu Bapak.";
+  if(mode==="OPERATOR"){
+    return "Baik, operator akan segera membantu.";
   }
 
+  /* default AI */
   return await runAI(ctx.message);
 }
 
@@ -69,7 +74,7 @@ Saya membantu:
 Ketik kebutuhan Bapak.`;
 
 /* =========================
-   MAIN HANDLER
+   HANDLER
    ========================= */
 export default async function handler(req,res){
 
@@ -101,7 +106,7 @@ export default async function handler(req,res){
 
       const session = getSession(from);
 
-      /* ===== LOG KE SHEET ===== */
+      /* ===== LOG PESAN MASUK ===== */
       await fetch(process.env.GAS_WEBHOOK,{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
@@ -115,19 +120,32 @@ export default async function handler(req,res){
 
       let reply;
 
-      /* ===== GREETING PERTAMA ===== */
+      /* ===== GREETING ===== */
       if(!session.greeted){
         session.greeted = true;
         reply = greeting;
       }else{
+
+        /* DETEKSI MODE BARU */
         const route = detectRoute(text);
-        reply = await runEngine(route,{
-          user:from,
-          message:text
-        });
+
+        if(route==="RESET"){
+          session.mode="AI";
+          reply = "Mode kembali ke AI.";
+        }
+        else if(route){
+          session.mode = route;
+          reply = `Mode ${route} aktif.`;
+        }
+        else{
+          reply = await runEngine(session.mode,{
+            user:from,
+            message:text
+          });
+        }
       }
 
-      /* ===== KIRIM KE WA ===== */
+      /* ===== KIRIM WA ===== */
       await fetch(
         `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
         {
