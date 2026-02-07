@@ -6,64 +6,101 @@
 <title>AI Mitra Nagari</title>
 
 <style>
+*{box-sizing:border-box}
+
 body{
   margin:0;
   font-family:Inter,Arial;
   background:#020617;
   color:#e5e7eb;
   height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
   overflow:hidden;
 }
 
-/* background glow */
-body::before{
-  content:"";
+/* animated grid background */
+.grid{
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(#0f172a 1px,transparent 1px),
+    linear-gradient(90deg,#0f172a 1px,transparent 1px);
+  background-size:40px 40px;
+  opacity:.2;
+}
+
+/* glow orb */
+.orb{
   position:absolute;
   width:600px;
   height:600px;
-  background:radial-gradient(circle,#22c55e33,transparent);
+  background:radial-gradient(circle,#22c55e44,transparent);
   filter:blur(80px);
+  animation:float 10s ease-in-out infinite;
+}
+
+@keyframes float{
+  0%{transform:translate(0,0)}
+  50%{transform:translate(60px,-40px)}
+  100%{transform:translate(0,0)}
 }
 
 /* container */
-.box{
-  text-align:center;
+.wrap{
+  position:relative;
   z-index:2;
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
 }
 
 /* title */
 h1{
-  font-size:40px;
-  letter-spacing:1px;
+  font-size:44px;
+  letter-spacing:2px;
 }
 
 .glow{
   color:#22c55e;
+  text-shadow:0 0 20px #22c55e66;
+}
+
+/* subtitle */
+.sub{
+  margin-top:10px;
+  opacity:.7;
+  font-size:16px;
 }
 
 /* buttons */
+.btns{
+  margin-top:30px;
+}
+
 .btn{
   display:inline-block;
   margin:10px;
-  padding:14px 26px;
-  border-radius:10px;
+  padding:14px 28px;
+  border-radius:12px;
   text-decoration:none;
   font-size:15px;
-  transition:.2s;
+  transition:.25s;
+  backdrop-filter:blur(10px);
 }
 
-.primary{
+/* primary */
+.main{
   background:#22c55e;
   color:#022c22;
+  box-shadow:0 0 20px #22c55e55;
 }
 
-.primary:hover{
-  transform:scale(1.05);
+.main:hover{
+  transform:scale(1.07);
 }
 
+/* secondary */
 .sec{
   border:1px solid #1e293b;
   color:#94a3b8;
@@ -71,34 +108,43 @@ h1{
 
 .sec:hover{
   background:#020617;
+  transform:scale(1.05);
 }
 
 /* footer */
 .foot{
   position:fixed;
-  bottom:20px;
+  bottom:18px;
+  width:100%;
+  text-align:center;
   font-size:12px;
-  opacity:.5;
+  opacity:.4;
 }
 </style>
 </head>
 
 <body>
 
-<div class="box">
+<div class="grid"></div>
+<div class="orb"></div>
 
+<div class="wrap">
+
+<div>
 <h1>
 AI <span class="glow">MITRA</span> NAGARI
 </h1>
 
-<p>
+<div class="sub">
 Command Center Digital  
 untuk Sekolah • Nagari • UMKM
-</p>
+</div>
 
-<div>
-<a class="btn primary" href="/chat.html">Masuk AI</a>
-<a class="btn sec" href="/dashboard">Dashboard</a>
+<div class="btns">
+<a href="/chat.html" class="btn main">Masuk AI</a>
+<a href="/dashboard" class="btn sec">Dashboard</a>
+</div>
+
 </div>
 
 </div>
