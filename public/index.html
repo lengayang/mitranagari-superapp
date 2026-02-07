@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,44 +7,44 @@
 
 <style>
 *{box-sizing:border-box}
-
 body{
   margin:0;
-  font-family:Inter,Arial;
+  font-family:Inter,Arial,system-ui;
   background:#020617;
   color:#e5e7eb;
-  height:100vh;
   overflow:hidden;
 }
 
-/* animated grid background */
+/* grid */
 .grid{
-  position:absolute;
-  inset:0;
+  position:absolute; inset:0;
   background:
     linear-gradient(#0f172a 1px,transparent 1px),
     linear-gradient(90deg,#0f172a 1px,transparent 1px);
-  background-size:40px 40px;
-  opacity:.2;
+  background-size:42px 42px;
+  opacity:.18;
+  animation:gridMove 20s linear infinite;
+}
+@keyframes gridMove{
+  from{background-position:0 0,0 0}
+  to{background-position:42px 42px,42px 42px}
 }
 
 /* glow orb */
 .orb{
   position:absolute;
-  width:600px;
-  height:600px;
-  background:radial-gradient(circle,#22c55e44,transparent);
-  filter:blur(80px);
-  animation:float 10s ease-in-out infinite;
+  width:620px; height:620px;
+  background:radial-gradient(circle,#22c55e33,transparent);
+  filter:blur(90px);
+  animation:float 12s ease-in-out infinite;
 }
-
 @keyframes float{
   0%{transform:translate(0,0)}
-  50%{transform:translate(60px,-40px)}
+  50%{transform:translate(80px,-50px)}
   100%{transform:translate(0,0)}
 }
 
-/* container */
+/* center */
 .wrap{
   position:relative;
   z-index:2;
@@ -53,72 +53,80 @@ body{
   align-items:center;
   justify-content:center;
   text-align:center;
+  padding:20px;
 }
 
-/* title */
-h1{
-  font-size:44px;
-  letter-spacing:2px;
+.title{
+  font-size:52px;
+  letter-spacing:3px;
 }
-
 .glow{
   color:#22c55e;
-  text-shadow:0 0 20px #22c55e66;
+  text-shadow:0 0 30px #22c55e99;
 }
 
-/* subtitle */
-.sub{
+.tag{
   margin-top:10px;
-  opacity:.7;
+  opacity:.75;
   font-size:16px;
+  letter-spacing:.4px;
+}
+
+/* system bar */
+.sys{
+  margin-top:18px;
+  font-size:12px;
+  opacity:.6;
+  font-family:monospace;
+}
+.dot{
+  display:inline-block;
+  width:8px;height:8px;
+  background:#22c55e;
+  border-radius:50%;
+  margin-right:6px;
+  box-shadow:0 0 8px #22c55e;
 }
 
 /* buttons */
-.btns{
-  margin-top:30px;
-}
+.btns{margin-top:34px}
 
 .btn{
   display:inline-block;
   margin:10px;
-  padding:14px 28px;
-  border-radius:12px;
+  padding:16px 34px;
+  border-radius:14px;
   text-decoration:none;
   font-size:15px;
   transition:.25s;
-  backdrop-filter:blur(10px);
+  backdrop-filter:blur(12px);
 }
 
-/* primary */
 .main{
   background:#22c55e;
   color:#022c22;
-  box-shadow:0 0 20px #22c55e55;
+  box-shadow:0 0 22px #22c55e66;
 }
+.main:hover{transform:scale(1.08)}
 
-.main:hover{
-  transform:scale(1.07);
-}
-
-/* secondary */
 .sec{
   border:1px solid #1e293b;
   color:#94a3b8;
 }
-
 .sec:hover{
   background:#020617;
   transform:scale(1.05);
 }
 
-/* footer */
-.foot{
+/* boot line */
+.boot{
   position:fixed;
-  bottom:18px;
+  bottom:14px;
   width:100%;
   text-align:center;
-  font-size:12px;
-  opacity:.4;
+  font-size:11px;
+  opacity:.35;
+  font-family:monospace;
 }
 </style>
 </head>
@@ -129,28 +137,29 @@ h1{
 <div class="orb"></div>
 
 <div class="wrap">
+  <div>
+    <div class="title">
+      AI <span class="glow">MITRA</span> NAGARI
+    </div>
 
-<div>
-<h1>
-AI <span class="glow">MITRA</span> NAGARI
-</h1>
+    <div class="tag">
+      Startup AI Command Center  
+      untuk Sekolah • Nagari • UMKM
+    </div>
 
-<div class="sub">
-Command Center Digital  
-untuk Sekolah • Nagari • UMKM
+    <div class="sys">
+      <span class="dot"></span> SYSTEM ONLINE • NODE ACTIVE • AI READY
+    </div>
+
+    <div class="btns">
+      <a href="/chat.html" class="btn main">Masuk AI</a>
+      <a href="/dashboard" class="btn sec">Operator Dashboard</a>
+    </div>
+  </div>
 </div>
 
-<div class="btns">
-<a href="/chat.html" class="btn main">Masuk AI</a>
-<a href="/dashboard" class="btn sec">Dashboard</a>
-</div>
-
-</div>
-
-</div>
-
-<div class="foot">
-Masri.Cloud • Mitra Nagari Digital
+<div class="boot">
+boot: mitra.cloud.init → ai.core.online → channel.ready
 </div>
 
 </body>
