@@ -9,7 +9,7 @@ Saya membantu:
 • Nagari
 • Sistem digital
 
-Ketik kebutuhan Bapak/Ibu.`;
+Ketik kebutuhan Bapak.`;
 
 const sessions = {};
 
@@ -22,20 +22,20 @@ export default async function handler(req, res) {
     const challenge = req.query["hub.challenge"];
 
     if (mode === "subscribe" && token === process.env.VERIFY_TOKEN) {
-      console.log("WEBHOOK VERIFIED");
       return res.status(200).send(challenge);
     }
 
     return res.status(403).send("Forbidden");
   }
 
-  // ===== TERIMA PESAN =====
+  // ===== RECEIVE MESSAGE =====
   if (req.method === "POST") {
     try {
-      const body = req.body;
-      console.log("INCOMING:", JSON.stringify(body));
 
-      const message = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+      const body = req.body;
+
+      const message =
+        body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
       if (!message) {
         return res.status(200).send("no message");
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
         reply = await runAI(text);
       }
 
-      const send = await fetch(
+      await fetch(
         `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
         {
           method: "POST",
@@ -73,9 +73,6 @@ export default async function handler(req, res) {
           }),
         }
       );
-
-      const data = await send.text();
-      console.log("WA RESPONSE:", data);
 
       return res.status(200).send("ok");
 

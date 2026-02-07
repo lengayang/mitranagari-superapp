@@ -1,15 +1,18 @@
 import OpenAI from "openai";
-import { SYSTEM_PROMPT } from "./prompt.js";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function runAI(message) {
+
   const completion = await client.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role: "system",
+        content: "Kamu adalah AI Mitra Nagari. Jawab singkat, ramah, profesional."
+      },
       { role: "user", content: message }
     ],
   });
