@@ -1,50 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Mitra Inbox</title>
+<meta charset="UTF-8">
+<title>Dashboard Mitra</title>
+
 <style>
-body{
-  background:#0f172a;
-  color:white;
-  font-family:Arial;
-}
-.chat{
-  border-bottom:1px solid #333;
-  padding:10px;
-}
-.phone{
-  color:#38bdf8;
-}
+body{font-family:Arial;background:#0f172a;color:white;margin:0}
+.container{display:flex;height:100vh}
+.sidebar{width:300px;background:#020617;padding:10px;overflow:auto}
+.chat{flex:1;display:flex;flex-direction:column}
+.msg{padding:10px;border-bottom:1px solid #333;cursor:pointer}
+.msg:hover{background:#111827}
+.bubble{margin:10px;padding:10px;border-radius:10px;max-width:70%}
+.user{background:#1e293b}
+.ai{background:#16a34a;margin-left:auto}
 </style>
 </head>
 
 <body>
 
-<h2>Inbox Mitra Nagari</h2>
-<div id="chat"></div>
+<div class="container">
+
+<div class="sidebar" id="list"></div>
+
+<div class="chat">
+<div id="messages" style="flex:1;overflow:auto;padding:20px"></div>
+</div>
+
+</div>
 
 <script>
+let dataAll=[];
+
 async function load(){
-  const r = await fetch("/api/getChats")
-  const data = await r.json()
+  const r = await fetch("/api/getChats");
+  const data = await r.json();
+  dataAll = data.slice(1);
 
-  const el = document.getElementById("chat")
-  el.innerHTML=""
+  const grouped={};
 
-  // skip header row
-  data.slice(1).reverse().forEach(row=>{
-    el.innerHTML += `
-      <div class="chat">
-        <div class="phone">${row[1]}</div>
-        <div>${row[3]}</div>
-        <div style="color:#22c55e">${row[4]||""}</div>
+  dataAll.forEach(r=>{
+    grouped[r[1]]=r;
+  });
+
+  const list=document.getElementById("list");
+  list.innerHTML="";
+
+  Object.keys(grouped).forEach(phone=>{
+    list.innerHTML+=`
+      <div class="msg" onclick="openChat('${phone}')">
+        ${phone}<br>
+        <small>${grouped[phone][3]}</small>
       </div>
-    `
-  })
+    `;
+  });
 }
 
-setInterval(load,3000)
-load()
+function openChat(phone){
+  const box=document.getElementById("messages");
+  box.innerHTML="";
+
+  dataAll
+    .filter(r=>r[1]===phone)
+    .forEach(r=>{
+      box.innerHTML+=`
+        <div class="bubble user">${r[3]}</div>
+        <div class="bubble ai">${r[4]||""}</div>
+      `;
+    });
+}
+
+setInterval(load,2000);
+load();
 </script>
 
 </body>
