@@ -14,12 +14,29 @@ body{font-family:Arial;background:#0f172a;color:white;margin:0}
 .bubble{margin:10px;padding:10px;border-radius:10px;max-width:70%}
 .user{background:#1e293b}
 .ai{background:#16a34a;margin-left:auto}
+
+#login{
+position:fixed;
+top:0;left:0;right:0;bottom:0;
+background:#000;
+display:flex;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+}
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<!-- LOGIN SCREEN -->
+<div id="login">
+<h2>Masuk Dashboard</h2>
+<input id="pass" type="password" placeholder="Password" style="padding:10px">
+<button onclick="cek()" style="margin-top:10px;padding:10px">Masuk</button>
+</div>
+
+<div class="container" id="main" style="display:none">
 
 <div class="sidebar" id="list"></div>
 
@@ -30,6 +47,20 @@ body{font-family:Arial;background:#0f172a;color:white;margin:0}
 </div>
 
 <script>
+
+const PASSWORD = "mitra123"; // ganti sesuai keinginan
+
+function cek(){
+  const p=document.getElementById("pass").value;
+  if(p===PASSWORD){
+    document.getElementById("login").style.display="none";
+    document.getElementById("main").style.display="flex";
+    load();
+  }else{
+    alert("Password salah");
+  }
+}
+
 let dataAll=[];
 
 async function load(){
@@ -38,7 +69,6 @@ async function load(){
   dataAll = data.slice(1);
 
   const grouped={};
-
   dataAll.forEach(r=>{
     grouped[r[1]]=r;
   });
@@ -70,8 +100,12 @@ function openChat(phone){
     });
 }
 
-setInterval(load,2000);
-load();
+setInterval(()=>{
+  if(document.getElementById("main").style.display==="flex"){
+    load();
+  }
+},3000);
+
 </script>
 
 </body>
