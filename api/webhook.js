@@ -1,5 +1,50 @@
 import { runAI } from "../ai/engine.js";
 
+// ====== STATE SEDERHANA ======
+const sessions = {};
+
+function getMode(user){
+  if(!sessions[user]){
+    sessions[user] = { mode:"AI", greeted:false };
+  }
+  return sessions[user];
+}
+
+// ====== ROUTER ======
+function detectRoute(text){
+  const t = text.toLowerCase();
+
+  if(t.includes("sarpras")) return "SARPRAS";
+  if(t.includes("sekolah")) return "SEKOLAH";
+  if(t.includes("umkm")) return "UMKM";
+  if(t.includes("operator")) return "OPERATOR";
+
+  return "AI";
+}
+
+// ====== SERVICE ENGINE ======
+async function runEngine(route,ctx){
+
+  if(route==="SARPRAS"){
+    return "Layanan Sarpras aktif. Ketik LAPOR untuk melapor fasilitas.";
+  }
+
+  if(route==="SEKOLAH"){
+    return "Layanan Sekolah aktif. Ketik INFO untuk informasi akademik.";
+  }
+
+  if(route==="UMKM"){
+    return "Layanan UMKM aktif. Ketik PRODUK untuk katalog.";
+  }
+
+  if(route==="OPERATOR"){
+    return "Operator akan segera membantu.";
+  }
+
+  return await runAI(ctx.message);
+}
+
+// ====== GREETING ======
 const greeting = `Halo 👋
 Saya AI Mitra Nagari Digital.
 
@@ -11,8 +56,7 @@ Saya membantu:
 
 Ketik kebutuhan Bapak.`;
 
-const sessions = {};
-
+// ====== HANDLER ======
 export default async function handler(req, res) {
 
   // ===== VERIFY META =====
@@ -36,13 +80,14 @@ export default async function handler(req, res) {
 
       const from = msg.from;
       const text = msg.text?.body || "";
-
       if (!text) return res.sendStatus(200);
 
       const name =
         body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name || "";
 
-      // ===== SIMPAN KE SHEET (PESAN MASUK) =====
+      const session = getMode(from);
+
+      // ===== SIMPAN PESAN MASUK =====
       await fetch(process.env.GAS_WEBHOOK,{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
@@ -56,14 +101,20 @@ export default async function handler(req, res) {
 
       let reply;
 
-      if (!sessions[from]) {
-        sessions[from] = true;
+      // ===== GREETING PERTAMA =====
+      if(!session.greeted){
+        session.greeted = true;
         reply = greeting;
-      } else {
-        reply = await runAI(text);
+      }else{
+        const route = detectRoute(text);
+
+        reply = await runEngine(route,{
+          user:from,
+          message:text
+        });
       }
 
-      // ===== KIRIM BALASAN WA =====
+      // ===== KIRIM KE WHATSAPP =====
       await fetch(
         `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
         {
@@ -80,7 +131,7 @@ export default async function handler(req, res) {
         }
       );
 
-      // ===== SIMPAN BALASAN KE SHEET =====
+      // ===== SIMPAN BALASAN =====
       await fetch(process.env.GAS_WEBHOOK,{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
