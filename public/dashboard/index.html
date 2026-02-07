@@ -2,111 +2,97 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Dashboard Mitra</title>
+<title>Mitra Dashboard</title>
 
 <style>
 body{font-family:Arial;background:#0f172a;color:white;margin:0}
+#login{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh}
 .container{display:flex;height:100vh}
 .sidebar{width:300px;background:#020617;padding:10px;overflow:auto}
-.chat{flex:1;display:flex;flex-direction:column}
 .msg{padding:10px;border-bottom:1px solid #333;cursor:pointer}
-.msg:hover{background:#111827}
 .bubble{margin:10px;padding:10px;border-radius:10px;max-width:70%}
 .user{background:#1e293b}
 .ai{background:#16a34a;margin-left:auto}
-
-#login{
-position:fixed;
-top:0;left:0;right:0;bottom:0;
-background:#000;
-display:flex;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN SCREEN -->
 <div id="login">
-<h2>Masuk Dashboard</h2>
-<input id="pass" type="password" placeholder="Password" style="padding:10px">
-<button onclick="cek()" style="margin-top:10px;padding:10px">Masuk</button>
+<h2>Dashboard Privat</h2>
+<input id="p" type="password" placeholder="Password">
+<button onclick="login()">Masuk</button>
 </div>
 
-<div class="container" id="main" style="display:none">
-
+<div id="main" style="display:none" class="container">
 <div class="sidebar" id="list"></div>
-
-<div class="chat">
-<div id="messages" style="flex:1;overflow:auto;padding:20px"></div>
-</div>
-
+<div style="flex:1" id="chat"></div>
 </div>
 
 <script>
 
-const PASSWORD = "mitra123"; // ganti sesuai keinginan
+async function login(){
+  const pass=document.getElementById("p").value;
 
-function cek(){
-  const p=document.getElementById("pass").value;
-  if(p===PASSWORD){
-    document.getElementById("login").style.display="none";
-    document.getElementById("main").style.display="flex";
-    load();
+  const r=await fetch("/api/login",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ pass })
+  });
+
+  if(r.ok){
+    start();
   }else{
-    alert("Password salah");
+    alert("Salah");
   }
 }
 
-let dataAll=[];
+async function start(){
+  document.getElementById("login").style.display="none";
+  document.getElementById("main").style.display="flex";
+  load();
+}
+
+let all=[];
 
 async function load(){
   const r = await fetch("/api/getChats");
+
+  if(r.status===401){
+    location.reload();
+    return;
+  }
+
   const data = await r.json();
-  dataAll = data.slice(1);
+  all=data.slice(1);
 
   const grouped={};
-  dataAll.forEach(r=>{
-    grouped[r[1]]=r;
-  });
+  all.forEach(r=> grouped[r[1]]=r );
 
   const list=document.getElementById("list");
   list.innerHTML="";
 
-  Object.keys(grouped).forEach(phone=>{
+  Object.keys(grouped).forEach(p=>{
     list.innerHTML+=`
-      <div class="msg" onclick="openChat('${phone}')">
-        ${phone}<br>
-        <small>${grouped[phone][3]}</small>
-      </div>
-    `;
+      <div class="msg" onclick="openChat('${p}')">
+        ${p}<br><small>${grouped[p][3]}</small>
+      </div>`;
   });
 }
 
-function openChat(phone){
-  const box=document.getElementById("messages");
+function openChat(p){
+  const box=document.getElementById("chat");
   box.innerHTML="";
 
-  dataAll
-    .filter(r=>r[1]===phone)
-    .forEach(r=>{
-      box.innerHTML+=`
-        <div class="bubble user">${r[3]}</div>
-        <div class="bubble ai">${r[4]||""}</div>
-      `;
-    });
+  all.filter(r=>r[1]===p).forEach(r=>{
+    box.innerHTML+=`
+      <div class="bubble user">${r[3]}</div>
+      <div class="bubble ai">${r[4]||""}</div>`;
+  });
 }
 
-setInterval(()=>{
-  if(document.getElementById("main").style.display==="flex"){
-    load();
-  }
-},3000);
+setInterval(load,3000);
 
 </script>
-
 </body>
 </html>

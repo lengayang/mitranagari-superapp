@@ -1,3 +1,11 @@
+export default async function handler(req,res){
+
+  const cookie = req.headers.cookie || "";
+
+  if(!cookie.includes(process.env.ADMIN_TOKEN)){
+    return res.status(401).json({ error:"unauthorized" });
+  }
+
 export default async function handler(req, res) {
   try {
     const url = process.env.GAS_GET
