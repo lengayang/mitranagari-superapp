@@ -17,15 +17,13 @@ export default async function handler(req, res) {
 
   // ===== VERIFY META =====
   if (req.method === "GET") {
-    const mode = req.query["hub.mode"];
-    const token = req.query["hub.verify_token"];
-    const challenge = req.query["hub.challenge"];
-
-    if (mode === "subscribe" && token === process.env.VERIFY_TOKEN) {
-      return res.status(200).send(challenge);
+    if (
+      req.query["hub.mode"] === "subscribe" &&
+      req.query["hub.verify_token"] === process.env.VERIFY_TOKEN
+    ) {
+      return res.status(200).send(req.query["hub.challenge"]);
     }
-
-    return res.status(403).send("Forbidden");
+    return res.sendStatus(403);
   }
 
   // ===== RECEIVE MESSAGE =====
@@ -33,38 +31,28 @@ export default async function handler(req, res) {
     try {
 
       const body = req.body;
+      const msg = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+      if (!msg) return res.sendStatus(200);
 
-      const message =
-        body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+      const from = msg.from;
+      const text = msg.text?.body || "";
 
-      if (!message) {
-        return res.status(200).send("no message");
-      }
-
-      const from = message.from;
-      const text = message.text?.body;
-
-      if (!text) {
-        return res.status(200).send("not text");
-      }
+      if (!text) return res.sendStatus(200);
 
       const name =
         body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name || "";
 
-      // ===== SIMPAN PESAN MASUK KE SHEET =====
-      try {
-        await fetch(process.env.GAS_WEBHOOK, {
-          method: "POST",
-          body: JSON.stringify({
-            phone: from,
-            name,
-            message: text,
-            reply: ""
-          })
-        });
-      } catch (e) {
-        console.log("Sheet save error:", e);
-      }
+      // ===== SIMPAN KE SHEET (PESAN MASUK) =====
+      await fetch(process.env.GAS_WEBHOOK,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          phone: from,
+          name,
+          message: text,
+          reply: ""
+        })
+      });
 
       let reply;
 
@@ -75,7 +63,7 @@ export default async function handler(req, res) {
         reply = await runAI(text);
       }
 
-      // ===== KIRIM BALASAN KE WHATSAPP =====
+      // ===== KIRIM BALASAN WA =====
       await fetch(
         `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
         {
@@ -87,32 +75,28 @@ export default async function handler(req, res) {
           body: JSON.stringify({
             messaging_product: "whatsapp",
             to: from,
-            type: "text",
             text: { body: reply },
           }),
         }
       );
 
-      // ===== SIMPAN BALASAN AI KE SHEET =====
-      try {
-        await fetch(process.env.GAS_WEBHOOK, {
-          method: "POST",
-          body: JSON.stringify({
-            phone: from,
-            name,
-            message: text,
-            reply: reply
-          })
-        });
-      } catch (e) {
-        console.log("Sheet reply save error:", e);
-      }
+      // ===== SIMPAN BALASAN KE SHEET =====
+      await fetch(process.env.GAS_WEBHOOK,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          phone: from,
+          name,
+          message: text,
+          reply: reply
+        })
+      });
 
-      return res.status(200).send("ok");
+      return res.sendStatus(200);
 
     } catch (err) {
       console.log("WEBHOOK ERROR:", err);
-      return res.status(200).send("error handled");
+      return res.sendStatus(200);
     }
   }
 }
