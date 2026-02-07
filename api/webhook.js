@@ -1,68 +1,50 @@
 import { runAI } from "../ai/engine.js";
 
-/* ================= SESSION ================= */
-const sessions = {};
+/* ===== AMBIL MODE USER DARI SHEET ===== */
+async function getMode(user){
+  const r = await fetch(process.env.GAS_GET);
+  const data = await r.json();
 
-function getSession(user){
-  if(!sessions[user]){
-    sessions[user] = {
-      greeted:false,
-      mode:"AI"
-    };
+  const rows = data.slice(1).reverse();
+
+  for(const row of rows){
+    if(row[1]===user && row[6]){
+      return row[6]; // kolom agent = mode
+    }
   }
-  return sessions[user];
+
+  return "AI";
 }
 
-/* ================= ROUTER ================= */
-function detectRoute(text){
-  const t = text.toLowerCase().trim();
+/* ===== SIMPAN MODE ===== */
+async function setMode(user,mode,name){
+  await fetch(process.env.GAS_WEBHOOK,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      phone:user,
+      name,
+      message:"[MODE]",
+      reply:mode,
+      agent:mode
+    })
+  });
+}
+
+/* ===== ROUTER ===== */
+function detect(text){
+  const t=text.toLowerCase();
 
   if(t==="ai") return "RESET";
-
-  if(t.startsWith("sarpras")) return "SARPRAS";
-  if(t.startsWith("sekolah")) return "SEKOLAH";
-  if(t.startsWith("umkm")) return "UMKM";
-  if(t.startsWith("operator")) return "OPERATOR";
+  if(t.includes("sekolah")) return "SEKOLAH";
+  if(t.includes("sarpras")) return "SARPRAS";
+  if(t.includes("umkm")) return "UMKM";
+  if(t.includes("operator")) return "OPERATOR";
 
   return null;
 }
 
-/* ================= ENGINE ================= */
-async function runEngine(mode,ctx){
-
-  if(mode==="SEKOLAH"){
-    return "📚 Mode Sekolah aktif.\nKetik: jadwal, info, guru.";
-  }
-
-  if(mode==="SARPRAS"){
-    if(ctx.message.toLowerCase().includes("lapor")){
-      return "🛠 Kirim format:\nLAPOR\nLokasi:\nKerusakan:";
-    }
-    return "🛠 Mode Sarpras aktif. Ketik LAPOR.";
-  }
-
-  if(mode==="UMKM"){
-    return "🛒 Mode UMKM aktif. Ketik PRODUK.";
-  }
-
-  if(mode==="OPERATOR"){
-    return "Operator akan segera membantu.";
-  }
-
-  return await runAI(ctx.message);
-}
-
-/* ================= GREETING ================= */
-const greeting = `Halo 👋
-Saya AI Mitra Nagari Digital.
-
-Ketik:
-• sekolah
-• sarpras
-• umkm
-• operator`;
-
-/* ================= HANDLER ================= */
+/* ===== HANDLER ===== */
 export default async function handler(req,res){
 
   if(req.method==="GET"){
@@ -78,63 +60,50 @@ export default async function handler(req,res){
   if(req.method==="POST"){
     try{
 
-      const body = req.body;
-      const msg = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+      const body=req.body;
+      const msg=body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
       if(!msg) return res.sendStatus(200);
 
-      const from = msg.from;
-      const text = msg.text?.body || "";
-      if(!text) return res.sendStatus(200);
+      const from=msg.from;
+      const text=msg.text?.body || "";
 
-      const name =
-        body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name || "";
+      const name=
+      body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name || "";
 
-      const session = getSession(from);
+      /* MODE SEKARANG */
+      let mode = await getMode(from);
 
-      /* ===== LOG MASUK ===== */
-      await fetch(process.env.GAS_WEBHOOK,{
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({
-          phone: from,
-          name,
-          message: text,
-          reply: ""
-        })
-      });
+      const route = detect(text);
+
+      if(route==="RESET"){
+        mode="AI";
+        await setMode(from,"AI",name);
+      }
+
+      else if(route){
+        mode=route;
+        await setMode(from,route,name);
+      }
 
       let reply;
 
-      /* ===== GREETING ===== */
-      if(!session.greeted){
-        session.greeted=true;
-        reply=greeting;
-      }else{
-
-        const route = detectRoute(text);
-
-        /* RESET MODE */
-        if(route==="RESET"){
-          session.mode="AI";
-          reply="Mode kembali ke AI.";
-        }
-
-        /* GANTI MODE */
-        else if(route){
-          session.mode=route;
-          reply=`Mode ${route} aktif.`;
-        }
-
-        /* JALANKAN MODE SEKARANG */
-        else{
-          reply = await runEngine(session.mode,{
-            user:from,
-            message:text
-          });
-        }
+      if(mode==="SEKOLAH"){
+        reply="📚 Mode Sekolah aktif. Ketik jadwal / info.";
+      }
+      else if(mode==="SARPRAS"){
+        reply="🛠 Mode Sarpras aktif. Ketik LAPOR.";
+      }
+      else if(mode==="UMKM"){
+        reply="🛒 Mode UMKM aktif.";
+      }
+      else if(mode==="OPERATOR"){
+        reply="Operator akan membantu.";
+      }
+      else{
+        reply=await runAI(text);
       }
 
-      /* ===== KIRIM WA ===== */
+      /* KIRIM WA */
       await fetch(
         `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
         {
@@ -151,22 +120,23 @@ export default async function handler(req,res){
         }
       );
 
-      /* ===== LOG BALAS ===== */
+      /* LOG */
       await fetch(process.env.GAS_WEBHOOK,{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
-          phone: from,
+          phone:from,
           name,
-          message: text,
-          reply
+          message:text,
+          reply,
+          agent:mode
         })
       });
 
       return res.sendStatus(200);
 
     }catch(err){
-      console.log("WEBHOOK ERROR:",err);
+      console.log(err);
       return res.sendStatus(200);
     }
   }
