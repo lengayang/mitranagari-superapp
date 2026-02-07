@@ -48,6 +48,24 @@ export default async function handler(req, res) {
         return res.status(200).send("not text");
       }
 
+      const name =
+        body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name || "";
+
+      // ===== SIMPAN PESAN MASUK KE SHEET =====
+      try {
+        await fetch(process.env.GAS_WEBHOOK, {
+          method: "POST",
+          body: JSON.stringify({
+            phone: from,
+            name,
+            message: text,
+            reply: ""
+          })
+        });
+      } catch (e) {
+        console.log("Sheet save error:", e);
+      }
+
       let reply;
 
       if (!sessions[from]) {
@@ -57,6 +75,7 @@ export default async function handler(req, res) {
         reply = await runAI(text);
       }
 
+      // ===== KIRIM BALASAN KE WHATSAPP =====
       await fetch(
         `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
         {
@@ -73,6 +92,21 @@ export default async function handler(req, res) {
           }),
         }
       );
+
+      // ===== SIMPAN BALASAN AI KE SHEET =====
+      try {
+        await fetch(process.env.GAS_WEBHOOK, {
+          method: "POST",
+          body: JSON.stringify({
+            phone: from,
+            name,
+            message: text,
+            reply: reply
+          })
+        });
+      } catch (e) {
+        console.log("Sheet reply save error:", e);
+      }
 
       return res.status(200).send("ok");
 
